@@ -23,6 +23,9 @@
         
         // 채팅이 변경될 때 잠금 상태 초기화
         context.eventSource.on('CHAT_CHANGED', onChatChanged);
+
+        // 기존 메시지들에 아이콘 추가
+        addLockIconsToExistingMessages();
         
         console.log('스와이프 잠금 확장 프로그램이 로드되었습니다.');
     }
@@ -43,7 +46,21 @@
 
     // 메시지 렌더링 이벤트 핸들러
     function onMessageRendered(messageId) {
-        addLockIconToMessage(messageId);
+        // 약간의 딜레이를 주어 DOM이 완전히 렌더링되도록 함
+        setTimeout(() => {
+            addLockIconToMessage(messageId);
+        }, 100);
+    }
+
+    // 기존 메시지들에도 자물쇠 아이콘 추가
+    function addLockIconsToExistingMessages() {
+        const existingMessages = document.querySelectorAll('.mes[data-mesid]');
+        existingMessages.forEach(messageElement => {
+            const messageId = messageElement.getAttribute('data-mesid');
+            if (messageId && !messageElement.querySelector('.swipe-lock-icon')) {
+                addLockIconToMessage(messageId);
+            }
+        });
     }
 
     // 채팅 변경 이벤트 핸들러
@@ -60,25 +77,28 @@
         // 이미 자물쇠 아이콘이 있는지 확인
         if (messageElement.querySelector('.swipe-lock-icon')) return;
 
-        // 메시지 메뉴 찾기
-        const messageMenu = messageElement.querySelector('.mes_buttons');
+        // 메시지 메뉴 찾기 (extraMesButtons 또는 mes_buttons)
+        const messageMenu = messageElement.querySelector('.extraMesButtons') || 
+                           messageElement.querySelector('.mes_buttons');
         if (!messageMenu) return;
 
-        // 자물쇠 아이콘 생성
+        // 자물쇠 아이콘 생성 (text-to-image-converter 방식 참고)
         const lockIcon = document.createElement('div');
-        lockIcon.className = 'swipe-lock-icon mes_button';
-        lockIcon.title = '스와이프 잠금 토글';
+        lockIcon.className = 'swipe-lock-icon mes_button fa-solid interactable';
+        lockIcon.setAttribute('tabindex', '0');
         
-        // 초기 상태는 잠김 (자물쇠 닫힘)
+        // 초기 상태는 잠김으로 설정
         updateLockIcon(lockIcon, true);
         
         // 클릭 이벤트 추가
-        lockIcon.addEventListener('click', () => {
+        lockIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             toggleMessageLock(messageId, lockIcon);
         });
 
-        // 메뉴에 아이콘 추가 (첫 번째 위치에)
-        messageMenu.insertBefore(lockIcon, messageMenu.firstChild);
+        // 메뉴에 아이콘 추가
+        messageMenu.appendChild(lockIcon);
         
         // 초기 상태에서 스와이프 내비게이터 숨기기
         hideSwipeNavigator(messageElement);
@@ -86,12 +106,17 @@
 
     // 자물쇠 아이콘 상태 업데이트
     function updateLockIcon(iconElement, isLocked) {
+        // 기존 클래스 제거
+        iconElement.classList.remove('fa-lock', 'fa-unlock', 'locked', 'unlocked');
+        
         if (isLocked) {
-            iconElement.innerHTML = '<i class="fa-solid fa-lock" style="color: #ff6b6b;"></i>';
+            iconElement.classList.add('fa-lock', 'locked');
             iconElement.title = '스와이프 잠금 해제하기';
+            iconElement.setAttribute('data-i18n', '[title]스와이프 잠금 해제하기');
         } else {
-            iconElement.innerHTML = '<i class="fa-solid fa-unlock" style="color: #51cf66;"></i>';
+            iconElement.classList.add('fa-unlock', 'unlocked');
             iconElement.title = '스와이프 잠그기';
+            iconElement.setAttribute('data-i18n', '[title]스와이프 잠그기');
         }
     }
 

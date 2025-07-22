@@ -2,59 +2,42 @@
 
 .swipe-lock-icon {
     cursor: pointer;
-    padding: 5px;
-    border-radius: 3px;
     transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 24px;
-    min-height: 24px;
+    font-size: 16px;
 }
 
 .swipe-lock-icon:hover {
-    background-color: rgba(255, 255, 255, 0.1);
     transform: scale(1.1);
+    opacity: 0.8;
 }
 
-.swipe-lock-icon i {
-    font-size: 14px;
-    transition: color 0.2s ease;
-}
-
-/* 잠긴 상태 스타일 */
-.swipe-lock-icon.locked i {
+/* 잠긴 상태 스타일 (기본) */
+.swipe-lock-icon.locked {
     color: #ff6b6b !important;
 }
 
 /* 해제된 상태 스타일 */
-.swipe-lock-icon.unlocked i {
+.swipe-lock-icon.unlocked {
     color: #51cf66 !important;
 }
 
 /* 호버 효과 개선 */
-.swipe-lock-icon:hover.locked i {
+.swipe-lock-icon:hover.locked {
     color: #ff5252 !important;
 }
 
-.swipe-lock-icon:hover.unlocked i {
+.swipe-lock-icon:hover.unlocked {
     color: #69db7c !important;
 }
 
-/* 아이콘 위치 조정 */
-.mes_buttons .swipe-lock-icon {
-    margin-right: 2px;
+/* 기본 mes_button 스타일과 일치시키기 */
+.swipe-lock-icon.mes_button {
+    margin: 0 2px;
 }
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
     .swipe-lock-icon {
-        min-width: 20px;
-        min-height: 20px;
-        padding: 3px;
-    }
-    
-    .swipe-lock-icon i {
-        font-size: 12px;
+        font-size: 14px;
     }
 } 
