@@ -1,0 +1,60 @@
+/* 스와이프 잠금 확장 프로그램 스타일 */
+
+.swipe-lock-icon {
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
+}
+
+.swipe-lock-icon:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.swipe-lock-icon i {
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+/* 잠긴 상태 스타일 */
+.swipe-lock-icon.locked i {
+    color: #ff6b6b !important;
+}
+
+/* 해제된 상태 스타일 */
+.swipe-lock-icon.unlocked i {
+    color: #51cf66 !important;
+}
+
+/* 호버 효과 개선 */
+.swipe-lock-icon:hover.locked i {
+    color: #ff5252 !important;
+}
+
+.swipe-lock-icon:hover.unlocked i {
+    color: #69db7c !important;
+}
+
+/* 아이콘 위치 조정 */
+.mes_buttons .swipe-lock-icon {
+    margin-right: 2px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .swipe-lock-icon {
+        min-width: 20px;
+        min-height: 20px;
+        padding: 3px;
+    }
+    
+    .swipe-lock-icon i {
+        font-size: 12px;
+    }
+} 
