@@ -88,6 +88,13 @@ data/default-user/extensions/swipe-lock/
 
 ## 변경 사항
 
+### v1.0.2
+- MutationObserver를 사용한 메시지 감지 방식으로 변경
+- text-to-image-converter 패턴 완전 적용
+- extraMesButtons 컨테이너에 버튼 추가
+- jQuery 기반 DOM 조작으로 개선
+- 안정성 및 호환성 대폭 향상
+
 ### v1.0.1
 - FontAwesome 아이콘 사용 방식 개선
 - 기존 메시지에도 자동으로 아이콘 추가

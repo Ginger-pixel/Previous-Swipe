@@ -18,14 +18,11 @@
         // 설정 초기화
         initSettings();
         
-        // 메시지가 렌더링될 때마다 자물쇠 아이콘 추가
-        context.eventSource.on('MESSAGE_RENDERED', onMessageRendered);
-        
         // 채팅이 변경될 때 잠금 상태 초기화
         context.eventSource.on('CHAT_CHANGED', onChatChanged);
 
-        // 기존 메시지들에 아이콘 추가
-        addLockIconsToExistingMessages();
+        // 메시지 버튼 설정
+        setupSwipeLockButtons();
         
         console.log('스와이프 잠금 확장 프로그램이 로드되었습니다.');
     }
@@ -44,100 +41,100 @@
         }
     }
 
-    // 메시지 렌더링 이벤트 핸들러
-    function onMessageRendered(messageId) {
-        // 약간의 딜레이를 주어 DOM이 완전히 렌더링되도록 함
-        setTimeout(() => {
-            addLockIconToMessage(messageId);
+    // 스와이프 잠금 버튼 설정 (text-to-image-converter 방식 참고)
+    function setupSwipeLockButtons() {
+        function createSwipeLockButton($mesBlock) {
+            const $button = $("<div>")
+                .addClass("swipe-lock-icon mes_button fa-solid fa-lock interactable")
+                .attr({
+                    title: "스와이프 잠금 해제하기",
+                    "data-i18n": "[title]스와이프 잠금 해제하기",
+                    tabindex: "0",
+                })
+                .on("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const messageId = $mesBlock.attr('data-mesid');
+                    if (messageId) {
+                        toggleMessageLock(messageId, $button[0]);
+                    }
+                });
+
+            // 초기 상태는 잠김
+            $button.addClass('locked');
+            const messageElement = $mesBlock[0];
+            hideSwipeNavigator(messageElement);
+
+            $mesBlock.find(".extraMesButtons").append($button);
+        }
+
+        // 기존 메시지들에 버튼 추가
+        $("#chat .mes:not(:has(.swipe-lock-icon))").each(function () {
+            createSwipeLockButton($(this));
+        });
+
+        // 새로운 메시지가 추가될 때마다 버튼 추가 (MutationObserver 사용)
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                const $newMes = $(mutation.addedNodes).filter(".mes:not(:has(.swipe-lock-icon))");
+                $newMes.each(function () {
+                    createSwipeLockButton($(this));
+                });
+            });
+        });
+
+        // chat 컨테이너가 존재할 때까지 기다림
+        const waitForChat = setInterval(() => {
+            const chatElement = $("#chat")[0];
+            if (chatElement) {
+                clearInterval(waitForChat);
+                observer.observe(chatElement, {childList: true, subtree: true});
+            }
         }, 100);
     }
 
-    // 기존 메시지들에도 자물쇠 아이콘 추가
-    function addLockIconsToExistingMessages() {
-        const existingMessages = document.querySelectorAll('.mes[data-mesid]');
-        existingMessages.forEach(messageElement => {
-            const messageId = messageElement.getAttribute('data-mesid');
-            if (messageId && !messageElement.querySelector('.swipe-lock-icon')) {
-                addLockIconToMessage(messageId);
-            }
-        });
-    }
 
-    // 채팅 변경 이벤트 핸들러
-    function onChatChanged() {
-        lockedMessages.clear();
-        updateAllMessageLocks();
-    }
-
-    // 메시지에 자물쇠 아이콘 추가
-    function addLockIconToMessage(messageId) {
-        const messageElement = document.querySelector(`[data-mesid="${messageId}"]`);
-        if (!messageElement) return;
-
-        // 이미 자물쇠 아이콘이 있는지 확인
-        if (messageElement.querySelector('.swipe-lock-icon')) return;
-
-        // 메시지 메뉴 찾기 (extraMesButtons 또는 mes_buttons)
-        const messageMenu = messageElement.querySelector('.extraMesButtons') || 
-                           messageElement.querySelector('.mes_buttons');
-        if (!messageMenu) return;
-
-        // 자물쇠 아이콘 생성 (text-to-image-converter 방식 참고)
-        const lockIcon = document.createElement('div');
-        lockIcon.className = 'swipe-lock-icon mes_button fa-solid interactable';
-        lockIcon.setAttribute('tabindex', '0');
-        
-        // 초기 상태는 잠김으로 설정
-        updateLockIcon(lockIcon, true);
-        
-        // 클릭 이벤트 추가
-        lockIcon.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleMessageLock(messageId, lockIcon);
-        });
-
-        // 메뉴에 아이콘 추가
-        messageMenu.appendChild(lockIcon);
-        
-        // 초기 상태에서 스와이프 내비게이터 숨기기
-        hideSwipeNavigator(messageElement);
-    }
-
-    // 자물쇠 아이콘 상태 업데이트
-    function updateLockIcon(iconElement, isLocked) {
-        // 기존 클래스 제거
-        iconElement.classList.remove('fa-lock', 'fa-unlock', 'locked', 'unlocked');
-        
-        if (isLocked) {
-            iconElement.classList.add('fa-lock', 'locked');
-            iconElement.title = '스와이프 잠금 해제하기';
-            iconElement.setAttribute('data-i18n', '[title]스와이프 잠금 해제하기');
-        } else {
-            iconElement.classList.add('fa-unlock', 'unlocked');
-            iconElement.title = '스와이프 잠그기';
-            iconElement.setAttribute('data-i18n', '[title]스와이프 잠그기');
-        }
-    }
 
     // 메시지 잠금 상태 토글
     function toggleMessageLock(messageId, iconElement) {
         const messageElement = document.querySelector(`[data-mesid="${messageId}"]`);
         if (!messageElement) return;
 
+        const $icon = $(iconElement);
         const isCurrentlyLocked = lockedMessages.has(messageId);
         
         if (isCurrentlyLocked) {
             // 잠금 해제
             lockedMessages.delete(messageId);
-            updateLockIcon(iconElement, false);
+            $icon.removeClass('fa-lock locked').addClass('fa-unlock unlocked');
+            $icon.attr('title', '스와이프 잠그기');
+            $icon.attr('data-i18n', '[title]스와이프 잠그기');
             showSwipeNavigator(messageElement);
         } else {
             // 잠금
             lockedMessages.add(messageId);
-            updateLockIcon(iconElement, true);
+            $icon.removeClass('fa-unlock unlocked').addClass('fa-lock locked');
+            $icon.attr('title', '스와이프 잠금 해제하기');
+            $icon.attr('data-i18n', '[title]스와이프 잠금 해제하기');
             hideSwipeNavigator(messageElement);
         }
+    }
+
+    // 채팅 변경 이벤트 핸들러
+    function onChatChanged() {
+        lockedMessages.clear();
+        // 모든 메시지 잠금 상태 초기화
+        $('.swipe-lock-icon').each(function() {
+            const $icon = $(this);
+            $icon.removeClass('fa-unlock unlocked').addClass('fa-lock locked');
+            $icon.attr('title', '스와이프 잠금 해제하기');
+            $icon.attr('data-i18n', '[title]스와이프 잠금 해제하기');
+            
+            const messageElement = $icon.closest('.mes')[0];
+            if (messageElement) {
+                hideSwipeNavigator(messageElement);
+            }
+        });
     }
 
     // 스와이프 내비게이터 숨기기
@@ -172,38 +169,16 @@
         }
     }
 
-    // 모든 메시지의 잠금 상태 업데이트
-    function updateAllMessageLocks() {
-        const allMessages = document.querySelectorAll('[data-mesid]');
-        allMessages.forEach(messageElement => {
-            const messageId = messageElement.getAttribute('data-mesid');
-            const lockIcon = messageElement.querySelector('.swipe-lock-icon');
-            
-            if (lockIcon) {
-                const isLocked = lockedMessages.has(messageId);
-                updateLockIcon(lockIcon, isLocked);
-                
-                if (isLocked) {
-                    hideSwipeNavigator(messageElement);
-                } else {
-                    showSwipeNavigator(messageElement);
-                }
-            }
-        });
-    }
+
 
     // SillyTavern이 로드된 후 초기화
     jQuery(document).ready(() => {
-        // SillyTavern이 완전히 로드되기를 기다림
-        if (typeof SillyTavern !== 'undefined') {
-            init();
-        } else {
-            // SillyTavern이 아직 로드되지 않은 경우 잠시 기다림
-            setTimeout(() => {
-                if (typeof SillyTavern !== 'undefined') {
-                    init();
-                }
-            }, 1000);
-        }
+        // SillyTavern이 완전히 로드될 때까지 기다림
+        const waitForSillyTavern = setInterval(() => {
+            if (typeof SillyTavern !== 'undefined' && SillyTavern.getContext) {
+                clearInterval(waitForSillyTavern);
+                init();
+            }
+        }, 100);
     });
 })(); 

@@ -4,6 +4,6 @@
     "js": "index.js",
     "css": "style.css",
     "author": "Previous-Swipe Extension",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "채팅 메시지의 스와이프 기능을 토글할 수 있는 자물쇠 아이콘을 추가합니다."
 } 
