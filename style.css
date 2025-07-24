@@ -1,45 +1,85 @@
 /* Previous Swipe 확장 스타일 */
 
-/* 아이콘 컨테이너 */
+/* 아이콘 컨테이너 - 강화된 스타일 */
 .previous-swipe-icon-container {
-    display: inline-flex;
-    align-items: center;
+    display: inline-flex !important;
+    align-items: center !important;
+    position: absolute !important;
+    right: 8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 100 !important;
     margin-left: 8px;
 }
 
-/* 잠금/해제 아이콘 */
+/* 잠금/해제 아이콘 - 테마 호환성 개선 */
 .previous-swipe-icon {
-    cursor: pointer;
-    font-size: 14px;
-    color: #666;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    user-select: none;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    padding: 4px !important;
+    border-radius: 4px !important;
+    transition: all 0.2s ease !important;
+    user-select: none !important;
+    color: #dc3545 !important; /* 기본 잠금 색상 */
 }
 
+/* 기본 호버 효과 */
 .previous-swipe-icon:hover {
-    color: #333;
-    background-color: rgba(0, 0, 0, 0.1);
-    transform: scale(1.1);
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    transform: scale(1.1) !important;
 }
 
+/* 잠금 상태 스타일 */
 .previous-swipe-icon.fa-lock {
-    color: #dc3545;
-}
-
-.previous-swipe-icon.fa-unlock {
-    color: #28a745;
+    color: #dc3545 !important;
 }
 
 .previous-swipe-icon.fa-lock:hover {
-    color: #c82333;
-    background-color: rgba(220, 53, 69, 0.1);
+    color: #c82333 !important;
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* 해제 상태 스타일 */
+.previous-swipe-icon.fa-unlock {
+    color: #28a745 !important;
 }
 
 .previous-swipe-icon.fa-unlock:hover {
-    color: #218838;
-    background-color: rgba(40, 167, 69, 0.1);
+    color: #218838 !important;
+    background-color: rgba(40, 167, 69, 0.1) !important;
+}
+
+/* FontAwesome 아이콘 강제 표시 */
+.previous-swipe-icon::before {
+    font-family: "Font Awesome 6 Free", "Font Awesome 5 Free", "FontAwesome" !important;
+    font-weight: 900 !important;
+    display: inline-block !important;
+}
+
+.previous-swipe-icon.fa-lock::before {
+    content: "\f023" !important; /* FontAwesome lock icon */
+}
+
+.previous-swipe-icon.fa-unlock::before {
+    content: "\f09c" !important; /* FontAwesome unlock icon */
+}
+
+/* 이모지 아이콘 대체 방법 지원 */
+.previous-swipe-icon {
+    min-width: 20px !important;
+    text-align: center !important;
+    display: inline-block !important;
+    line-height: 1 !important;
+}
+
+/* 텍스트 아이콘 사용 시 스타일 조정 */
+.previous-swipe-icon:not(:empty) {
+    font-family: Arial, sans-serif !important;
+    font-size: 16px !important;
+}
+
+.previous-swipe-icon:not(:empty)::before {
+    display: none !important;
 }
 
 /* 스와이프 네비게이터 */
@@ -227,14 +267,48 @@
     outline-offset: 2px;
 }
 
-/* 메시지 헤더와의 정렬 */
+/* 메시지 헤더와의 정렬 - 강화된 스타일 */
 .mes_header {
-    position: relative;
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    padding-right: 40px !important; /* 아이콘 공간 확보 */
 }
 
 .mes_header .previous-swipe-icon-container {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
+    position: absolute !important;
+    right: 8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 101 !important;
+}
+
+/* SillyTavern 메시지 구조 호환성 */
+.mes:not(.user_mes) .mes_header {
+    position: relative !important;
+}
+
+.mes:not(.user_mes) .mes_header .previous-swipe-icon-container {
+    position: absolute !important;
+    right: 8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 101 !important;
+}
+
+/* 다양한 메시지 헤더 구조 지원 */
+.message_header,
+.name_text {
+    position: relative !important;
+}
+
+/* 아이콘이 다른 요소와 겹치지 않도록 */
+.mes_header > *:not(.previous-swipe-icon-container) {
+    margin-right: 35px;
+}
+
+.mes_header .ch_name,
+.mes_header .name_text,
+.mes_header .character_name {
+    margin-right: 40px !important;
 } 

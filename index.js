@@ -9,11 +9,87 @@
     let isInitialized = false;
     let unlockedMessages = new Set(); // 언락된 메시지들을 추적
 
+    // **강화된 DOM 준비 상태 확인 함수**
+    function isDOMReady() {
+        const chat = document.querySelector('#chat');
+        const extensionsSettings = document.querySelector('#extensions_settings2');
+        const sendTextarea = document.querySelector('#send_textarea');
+        
+        // 모든 핵심 요소가 존재하고 DOM에 연결되어 있는지 확인
+        const allElementsExist = !!(chat && extensionsSettings && sendTextarea);
+        const allElementsConnected = !!(
+            chat && chat.isConnected &&
+            extensionsSettings && extensionsSettings.isConnected &&
+            sendTextarea && sendTextarea.isConnected
+        );
+        
+        const isReady = allElementsExist && allElementsConnected;
+        
+        if (!isReady) {
+            console.log('🔄 Previous Swipe: DOM 준비 상태 체크 실패:', {
+                chat: !!chat,
+                extensionsSettings: !!extensionsSettings,
+                sendTextarea: !!sendTextarea,
+                allElementsConnected
+            });
+        }
+        
+        return isReady;
+    }
+
+    // **레이아웃 안정화까지 기다리는 함수**
+    function waitForLayoutStabilization() {
+        return new Promise((resolve) => {
+            let attempts = 0;
+            const maxAttempts = 30; // 최대 30번 시도 (15초)
+            
+            const checkStability = () => {
+                attempts++;
+                
+                if (isDOMReady()) {
+                    // 추가로 300ms 더 기다려서 레이아웃이 완전히 안정되도록 함
+                    setTimeout(() => {
+                        if (isDOMReady()) {
+                            console.log(`🔄 Previous Swipe: DOM 안정화 완료 (${attempts}번째 시도)`);
+                            resolve(true);
+                        } else {
+                            if (attempts < maxAttempts) {
+                                setTimeout(checkStability, 500);
+                            } else {
+                                console.warn('🔄 Previous Swipe: DOM 안정화 타임아웃');
+                                resolve(false);
+                            }
+                        }
+                    }, 300);
+                } else {
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkStability, 500);
+                    } else {
+                        console.warn('🔄 Previous Swipe: DOM 안정화 실패 - 타임아웃');
+                        resolve(false);
+                    }
+                }
+            };
+            
+            checkStability();
+        });
+    }
+
     // 확장 초기화
-    function initialize() {
+    async function initialize() {
         if (isInitialized) return;
         
-        console.log('🔄 Previous Swipe: 초기화 시작');
+        console.log('🔄 Previous Swipe: 초기화 시작...');
+        
+        // DOM이 안정화될 때까지 기다림
+        const isStabilized = await waitForLayoutStabilization();
+        
+        if (!isStabilized) {
+            console.warn('🔄 Previous Swipe: DOM 안정화 실패, 초기화 건너뜀');
+            return;
+        }
+        
+        console.log('🔄 Previous Swipe: DOM 안정화 확인됨, 초기화 진행');
         
         // 메시지 관찰자 설정
         setupMessageObserver();
@@ -22,7 +98,7 @@
         addIconsToExistingMessages();
         
         isInitialized = true;
-        console.log('🔄 Previous Swipe: 초기화 완료');
+        console.log('🔄 Previous Swipe: ✅ 초기화 완료!');
     }
 
     // DOM이 로드된 후 초기화
@@ -71,39 +147,113 @@
         });
     }
 
-    // 메시지에 아이콘 추가
+    // 메시지에 아이콘 추가 (개선된 버전)
     function addIconToMessage(messageElement) {
-        // 이미 아이콘이 있는지 확인
-        if (messageElement.querySelector('.previous-swipe-icon')) {
-            return;
-        }
+        try {
+            // messageElement가 실제 메시지 요소인지 확인
+            let actualMessage = messageElement;
+            if (!messageElement.classList.contains('mes')) {
+                actualMessage = messageElement.querySelector('.mes');
+                if (!actualMessage) {
+                    return;
+                }
+            }
 
-        // 사용자 메시지는 제외
-        if (messageElement.classList.contains('user_mes')) {
-            return;
-        }
+            // 이미 아이콘이 있는지 확인
+            if (actualMessage.querySelector('.previous-swipe-icon')) {
+                return;
+            }
 
-        // 메시지 헤더 찾기
-        const messageHeader = messageElement.querySelector('.mes_header');
-        if (!messageHeader) {
-            return;
-        }
+            // 사용자 메시지는 제외 (is_user 또는 user_mes 클래스 확인)
+            if (actualMessage.classList.contains('user_mes') || 
+                actualMessage.hasAttribute('is_user') ||
+                actualMessage.querySelector('.user_mes')) {
+                return;
+            }
 
-        // 아이콘 생성
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'previous-swipe-icon-container';
-        
-        const icon = document.createElement('i');
-        icon.className = 'previous-swipe-icon fa-solid fa-lock';
-        icon.title = '이전 메시지 스와이프 탐색 활성화';
-        
-        iconContainer.appendChild(icon);
-        
-        // 클릭 이벤트 추가
-        icon.addEventListener('click', () => handleIconClick(messageElement, icon));
-        
-        // 메시지 헤더에 아이콘 추가
-        messageHeader.appendChild(iconContainer);
+            // 메시지 헤더 찾기 (여러 선택자 시도)
+            let messageHeader = actualMessage.querySelector('.mes_header') || 
+                               actualMessage.querySelector('.message_header') ||
+                               actualMessage.querySelector('.name_text')?.parentElement;
+            
+            if (!messageHeader) {
+                console.log('🔄 Previous Swipe: 메시지 헤더를 찾을 수 없음', actualMessage);
+                return;
+            }
+
+            // 아이콘 컨테이너 생성
+            const iconContainer = document.createElement('div');
+            iconContainer.className = 'previous-swipe-icon-container';
+            iconContainer.style.cssText = `
+                display: inline-flex;
+                align-items: center;
+                margin-left: 8px;
+                position: absolute;
+                right: 8px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 100;
+            `;
+            
+            // FontAwesome 아이콘 생성 (대체 방법 포함)
+            const icon = document.createElement('i');
+            icon.className = 'previous-swipe-icon fa-solid fa-lock';
+            icon.title = '이전 메시지 스와이프 탐색 활성화';
+            
+            // FontAwesome이 로드되지 않은 경우 대체 텍스트 사용
+            setTimeout(() => {
+                const iconStyle = window.getComputedStyle(icon, '::before');
+                if (!iconStyle.content || iconStyle.content === 'none' || iconStyle.content === '') {
+                    console.log('🔄 Previous Swipe: FontAwesome 미감지, 텍스트 아이콘 사용');
+                    icon.textContent = '🔒';
+                    icon.style.fontFamily = 'Arial, sans-serif';
+                }
+            }, 100);
+            
+            icon.style.cssText = `
+                cursor: pointer;
+                font-size: 14px;
+                color: #dc3545;
+                padding: 4px;
+                border-radius: 4px;
+                transition: all 0.2s ease;
+                user-select: none;
+                min-width: 20px;
+                text-align: center;
+                display: inline-block;
+            `;
+            
+            iconContainer.appendChild(icon);
+            
+            // 클릭 이벤트 추가
+            icon.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleIconClick(actualMessage, icon);
+            });
+            
+            // 호버 효과 추가
+            icon.addEventListener('mouseenter', () => {
+                icon.style.backgroundColor = 'rgba(220, 53, 69, 0.1)';
+                icon.style.transform = 'scale(1.1)';
+            });
+            
+            icon.addEventListener('mouseleave', () => {
+                icon.style.backgroundColor = '';
+                icon.style.transform = 'scale(1)';
+            });
+            
+            // 메시지 헤더를 상대 위치로 설정
+            messageHeader.style.position = 'relative';
+            
+            // 메시지 헤더에 아이콘 추가
+            messageHeader.appendChild(iconContainer);
+            
+            console.log('🔄 Previous Swipe: 아이콘 추가 완료', actualMessage);
+            
+        } catch (error) {
+            console.error('🔄 Previous Swipe: 아이콘 추가 실패', error);
+        }
     }
 
     // 아이콘 클릭 핸들러
@@ -132,9 +282,18 @@
 
     // 메시지 언락
     function unlockMessage(messageElement, icon, messageId) {
-        // 아이콘 변경
+        // 아이콘 변경 (FontAwesome + 대체 텍스트)
         icon.className = 'previous-swipe-icon fa-solid fa-unlock';
         icon.title = '이전 메시지 스와이프 탐색 비활성화';
+        icon.style.color = '#28a745';
+        
+        // FontAwesome이 없는 경우 대체 텍스트
+        setTimeout(() => {
+            const iconStyle = window.getComputedStyle(icon, '::before');
+            if (!iconStyle.content || iconStyle.content === 'none' || iconStyle.content === '' || icon.textContent) {
+                icon.textContent = '🔓';
+            }
+        }, 50);
         
         // 언락된 메시지로 추가
         unlockedMessages.add(messageId);
@@ -147,9 +306,18 @@
 
     // 메시지 락
     function lockMessage(messageElement, icon, messageId) {
-        // 아이콘 변경
+        // 아이콘 변경 (FontAwesome + 대체 텍스트)
         icon.className = 'previous-swipe-icon fa-solid fa-lock';
         icon.title = '이전 메시지 스와이프 탐색 활성화';
+        icon.style.color = '#dc3545';
+        
+        // FontAwesome이 없는 경우 대체 텍스트
+        setTimeout(() => {
+            const iconStyle = window.getComputedStyle(icon, '::before');
+            if (!iconStyle.content || iconStyle.content === 'none' || iconStyle.content === '' || icon.textContent) {
+                icon.textContent = '🔒';
+            }
+        }, 50);
         
         // 언락된 메시지에서 제거
         unlockedMessages.delete(messageId);
@@ -263,7 +431,68 @@
         }, 3000);
     }
 
-    // 페이지 로드 완료 대기
+    // **강화된 초기화 시스템** (참고용 스크립트 방식 적용)
+    $(document).ready(function() {
+        console.log('🔄 Previous Swipe: DOM 준비 완료');
+        setTimeout(initialize, 1000);
+        
+        // SillyTavern 특화 이벤트 리스너 추가
+        $(document).on('characterSelected chat_render_complete CHAT_CHANGED', () => {
+            setTimeout(() => { 
+                if (!isInitialized) {
+                    console.log('🔄 Previous Swipe: 이벤트 기반 초기화 시도');
+                    initialize(); 
+                }
+                // 기존 메시지들에 아이콘 다시 추가
+                addIconsToExistingMessages();
+            }, 500);
+        });
+        
+        // 캐릭터 선택 변경 시
+        $(document).on('change', '#character_select', () => {
+            setTimeout(() => { 
+                console.log('🔄 Previous Swipe: 캐릭터 변경 감지');
+                if (!isInitialized) initialize(); 
+                addIconsToExistingMessages();
+            }, 200);
+        });
+        
+        // 확장 탭 클릭 시
+        $(document).on('click', '[data-i18n="Extensions"]', () => {
+            setTimeout(() => { 
+                console.log('🔄 Previous Swipe: 확장 탭 클릭 감지');
+                if (!isInitialized) initialize(); 
+            }, 500);
+        });
+        
+        // 채팅 메시지 변화 감지
+        $(document).on('DOMNodeInserted', '#chat', function(e) {
+            if (e.target && e.target.classList && e.target.classList.contains('mes')) {
+                setTimeout(() => {
+                    console.log('🔄 Previous Swipe: 새 메시지 감지');
+                    addIconToMessage(e.target);
+                }, 100);
+            }
+        });
+        
+        // 백업 강제 초기화 (5초 후)
+        setTimeout(() => {
+            if (!isInitialized) {
+                console.log('🔄 Previous Swipe: 타이머 강제 초기화 실행');
+                initialize();
+            }
+        }, 5000);
+        
+        // 추가 백업 초기화 (10초 후)
+        setTimeout(() => {
+            if (!isInitialized) {
+                console.log('🔄 Previous Swipe: 최종 백업 초기화 실행');
+                waitForSillyTavern();
+            }
+        }, 10000);
+    });
+
+    // 기존 방식도 유지 (jQuery가 없을 경우 대비)
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', waitForSillyTavern);
     } else {
