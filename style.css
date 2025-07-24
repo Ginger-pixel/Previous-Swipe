@@ -1,43 +1,240 @@
-/* 스와이프 잠금 확장 프로그램 스타일 */
+/* Previous Swipe 확장 스타일 */
 
-.swipe-lock-icon {
+/* 아이콘 컨테이너 */
+.previous-swipe-icon-container {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+}
+
+/* 잠금/해제 아이콘 */
+.previous-swipe-icon {
     cursor: pointer;
+    font-size: 14px;
+    color: #666;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.previous-swipe-icon:hover {
+    color: #333;
+    background-color: rgba(0, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.previous-swipe-icon.fa-lock {
+    color: #dc3545;
+}
+
+.previous-swipe-icon.fa-unlock {
+    color: #28a745;
+}
+
+.previous-swipe-icon.fa-lock:hover {
+    color: #c82333;
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.previous-swipe-icon.fa-unlock:hover {
+    color: #218838;
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+/* 스와이프 네비게이터 */
+.previous-swipe-navigator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    color: #666;
+    user-select: none;
+}
+
+/* 네비게이터 화살표 */
+.previous-swipe-nav {
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
     transition: all 0.2s ease;
     font-size: 16px;
+    color: #007bff;
 }
 
-.swipe-lock-icon:hover {
-    transform: scale(1.1);
-    opacity: 0.8;
+.previous-swipe-nav:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    color: #0056b3;
+    transform: scale(1.2);
 }
 
-/* 잠긴 상태 스타일 (기본) */
-.swipe-lock-icon.locked {
-    color: #ff6b6b !important;
+.previous-swipe-nav:active {
+    transform: scale(0.95);
 }
 
-/* 해제된 상태 스타일 */
-.swipe-lock-icon.unlocked {
-    color: #51cf66 !important;
+.previous-swipe-nav.fa-chevron-left {
+    margin-right: 4px;
 }
 
-/* 호버 효과 개선 */
-.swipe-lock-icon:hover.locked {
-    color: #ff5252 !important;
+.previous-swipe-nav.fa-chevron-right {
+    margin-left: 4px;
 }
 
-.swipe-lock-icon:hover.unlocked {
-    color: #69db7c !important;
+/* 스와이프 정보 */
+.previous-swipe-info {
+    font-weight: 500;
+    color: #333;
+    min-width: 40px;
+    text-align: center;
+    font-size: 13px;
 }
 
-/* 기본 mes_button 스타일과 일치시키기 */
-.swipe-lock-icon.mes_button {
-    margin: 0 2px;
+/* 토스트 메시지 */
+.previous-swipe-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #333;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+    max-width: 300px;
+}
+
+.previous-swipe-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 다크모드 지원 */
+@media (prefers-color-scheme: dark) {
+    .previous-swipe-icon {
+        color: #aaa;
+    }
+    
+    .previous-swipe-icon:hover {
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .previous-swipe-navigator {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
+        color: #aaa;
+    }
+    
+    .previous-swipe-info {
+        color: #fff;
+    }
+    
+    .previous-swipe-nav {
+        color: #4dabf7;
+    }
+    
+    .previous-swipe-nav:hover {
+        background-color: rgba(77, 171, 247, 0.1);
+        color: #74c0fc;
+    }
+    
+    .previous-swipe-toast {
+        background: #444;
+        color: #fff;
+    }
+}
+
+/* SillyTavern 테마와의 호환성 */
+.mes_header .previous-swipe-icon-container {
+    margin-left: auto;
+    margin-right: 8px;
 }
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
-    .swipe-lock-icon {
-        font-size: 14px;
+    .previous-swipe-navigator {
+        gap: 8px;
+        padding: 6px 12px;
+        margin-top: 8px;
     }
+    
+    .previous-swipe-nav {
+        font-size: 14px;
+        padding: 4px;
+    }
+    
+    .previous-swipe-info {
+        font-size: 12px;
+        min-width: 35px;
+    }
+    
+    .previous-swipe-toast {
+        right: 10px;
+        top: 10px;
+        max-width: 250px;
+        font-size: 13px;
+        padding: 10px 16px;
+    }
+}
+
+/* 애니메이션 */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.previous-swipe-icon.fa-unlock {
+    animation: pulse 0.5s ease-in-out;
+}
+
+/* 네비게이터 슬라이드 인 애니메이션 */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.previous-swipe-navigator {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* 호버 효과 개선 */
+.previous-swipe-icon-container:hover .previous-swipe-icon {
+    filter: brightness(1.1);
+}
+
+/* 접근성 개선 */
+.previous-swipe-icon:focus,
+.previous-swipe-nav:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* 메시지 헤더와의 정렬 */
+.mes_header {
+    position: relative;
+}
+
+.mes_header .previous-swipe-icon-container {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
 } 
