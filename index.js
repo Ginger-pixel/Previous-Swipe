@@ -139,46 +139,109 @@
         });
     }
 
-    // 기존 메시지들에 아이콘 추가
+    // 기존 메시지들에 아이콘 추가 (강화된 디버깅)
     function addIconsToExistingMessages() {
-        const messages = document.querySelectorAll('.mes');
+        console.log('🔄 Previous Swipe: 기존 메시지 아이콘 추가 시작');
+        
+        // 다양한 메시지 선택자 시도
+        let messages = document.querySelectorAll('.mes');
+        if (messages.length === 0) {
+            messages = document.querySelectorAll('.message');
+        }
+        if (messages.length === 0) {
+            messages = document.querySelectorAll('[class*="mes"]');
+        }
+        if (messages.length === 0) {
+            messages = document.querySelectorAll('#chat > div');
+        }
+        
+        console.log(`🔄 Previous Swipe: 총 ${messages.length}개의 메시지 발견:`, messages);
+        
+        if (messages.length === 0) {
+            console.warn('🔄 Previous Swipe: 메시지를 찾을 수 없음. DOM 구조 확인 중...');
+            console.log('Chat container:', document.querySelector('#chat'));
+            console.log('Chat children:', document.querySelector('#chat')?.children);
+            return;
+        }
+        
         messages.forEach((message, index) => {
+            console.log(`🔄 Previous Swipe: 메시지 ${index + 1} 처리 중:`, message);
             setTimeout(() => addIconToMessage(message), index * 50);
         });
     }
 
-    // 메시지에 아이콘 추가 (개선된 버전)
+    // 메시지에 아이콘 추가 (강화된 디버깅 버전)
     function addIconToMessage(messageElement) {
         try {
+            console.log('🔄 Previous Swipe: addIconToMessage 시작:', messageElement);
+            
             // messageElement가 실제 메시지 요소인지 확인
             let actualMessage = messageElement;
             if (!messageElement.classList.contains('mes')) {
+                console.log('🔄 Previous Swipe: .mes 클래스 없음, 자식에서 찾는 중...');
                 actualMessage = messageElement.querySelector('.mes');
                 if (!actualMessage) {
-                    return;
+                    console.log('🔄 Previous Swipe: .mes 자식 요소 찾을 수 없음');
+                    // 직접 메시지인지 확인
+                    if (messageElement.id && (messageElement.id.includes('mes') || messageElement.id.includes('message'))) {
+                        actualMessage = messageElement;
+                        console.log('🔄 Previous Swipe: ID로 메시지 요소 확인됨:', messageElement.id);
+                    } else {
+                        console.log('🔄 Previous Swipe: 메시지 요소가 아님, 건너뜀');
+                        return;
+                    }
                 }
             }
 
+            console.log('🔄 Previous Swipe: 실제 메시지 요소:', actualMessage);
+            console.log('🔄 Previous Swipe: 메시지 클래스:', actualMessage.className);
+
             // 이미 아이콘이 있는지 확인
             if (actualMessage.querySelector('.previous-swipe-icon')) {
+                console.log('🔄 Previous Swipe: 이미 아이콘 존재, 건너뜀');
                 return;
             }
 
             // 사용자 메시지는 제외 (is_user 또는 user_mes 클래스 확인)
-            if (actualMessage.classList.contains('user_mes') || 
-                actualMessage.hasAttribute('is_user') ||
-                actualMessage.querySelector('.user_mes')) {
+            const isUserMessage = actualMessage.classList.contains('user_mes') || 
+                                 actualMessage.hasAttribute('is_user') ||
+                                 actualMessage.querySelector('.user_mes') ||
+                                 actualMessage.hasAttribute('is_user') ||
+                                 actualMessage.querySelector('[is_user]');
+            
+            if (isUserMessage) {
+                console.log('🔄 Previous Swipe: 사용자 메시지, 건너뜀');
                 return;
             }
+
+            console.log('🔄 Previous Swipe: AI 메시지 확인됨, 헤더 찾는 중...');
 
             // 메시지 헤더 찾기 (여러 선택자 시도)
             let messageHeader = actualMessage.querySelector('.mes_header') || 
                                actualMessage.querySelector('.message_header') ||
-                               actualMessage.querySelector('.name_text')?.parentElement;
+                               actualMessage.querySelector('.name_text')?.parentElement ||
+                               actualMessage.querySelector('.ch_name')?.parentElement ||
+                               actualMessage.querySelector('.character_name')?.parentElement;
+            
+            console.log('🔄 Previous Swipe: 찾은 메시지 헤더:', messageHeader);
             
             if (!messageHeader) {
-                console.log('🔄 Previous Swipe: 메시지 헤더를 찾을 수 없음', actualMessage);
-                return;
+                console.log('🔄 Previous Swipe: 메시지 헤더를 찾을 수 없음. 가능한 헤더들 확인 중...');
+                console.log('- .mes_header:', actualMessage.querySelector('.mes_header'));
+                console.log('- .message_header:', actualMessage.querySelector('.message_header'));
+                console.log('- .name_text:', actualMessage.querySelector('.name_text'));
+                console.log('- .ch_name:', actualMessage.querySelector('.ch_name'));
+                console.log('- .character_name:', actualMessage.querySelector('.character_name'));
+                console.log('- 첫 번째 자식:', actualMessage.firstElementChild);
+                
+                // 첫 번째 자식을 헤더로 사용 시도
+                if (actualMessage.firstElementChild) {
+                    messageHeader = actualMessage.firstElementChild;
+                    console.log('🔄 Previous Swipe: 첫 번째 자식을 헤더로 사용:', messageHeader);
+                } else {
+                    console.log('🔄 Previous Swipe: 헤더 찾기 실패, 건너뜀');
+                    return;
+                }
             }
 
             // 아이콘 컨테이너 생성
@@ -436,16 +499,31 @@
         console.log('🔄 Previous Swipe: DOM 준비 완료');
         setTimeout(initialize, 1000);
         
-        // SillyTavern 특화 이벤트 리스너 추가
-        $(document).on('characterSelected chat_render_complete CHAT_CHANGED', () => {
-            setTimeout(() => { 
-                if (!isInitialized) {
-                    console.log('🔄 Previous Swipe: 이벤트 기반 초기화 시도');
-                    initialize(); 
-                }
-                // 기존 메시지들에 아이콘 다시 추가
-                addIconsToExistingMessages();
-            }, 500);
+        // SillyTavern 특화 이벤트 리스너 추가 (강화됨)
+        const sillytavernEvents = [
+            'characterSelected', 
+            'chat_render_complete', 
+            'CHAT_CHANGED',
+            'message_rendered',
+            'chat_loaded',
+            'generation_ended',
+            'message_sent',
+            'character_loaded',
+            'chat_updated'
+        ];
+        
+        sillytavernEvents.forEach(eventName => {
+            $(document).on(eventName, () => {
+                console.log(`🔄 Previous Swipe: ${eventName} 이벤트 감지`);
+                setTimeout(() => { 
+                    if (!isInitialized) {
+                        console.log('🔄 Previous Swipe: 이벤트 기반 초기화 시도');
+                        initialize(); 
+                    }
+                    // 기존 메시지들에 아이콘 다시 추가
+                    addIconsToExistingMessages();
+                }, 300);
+            });
         });
         
         // 캐릭터 선택 변경 시
@@ -465,15 +543,36 @@
             }, 500);
         });
         
-        // 채팅 메시지 변화 감지
-        $(document).on('DOMNodeInserted', '#chat', function(e) {
-            if (e.target && e.target.classList && e.target.classList.contains('mes')) {
-                setTimeout(() => {
-                    console.log('🔄 Previous Swipe: 새 메시지 감지');
-                    addIconToMessage(e.target);
-                }, 100);
-            }
-        });
+        // 채팅 메시지 변화 감지 (MutationObserver 사용)
+        const chatContainer = document.querySelector('#chat');
+        if (chatContainer) {
+            const chatObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach((node) => {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                console.log('🔄 Previous Swipe: 새 노드 추가됨:', node);
+                                if (node.classList.contains('mes') || 
+                                    node.querySelector('.mes') ||
+                                    node.id && (node.id.includes('mes') || node.id.includes('message'))) {
+                                    setTimeout(() => {
+                                        console.log('🔄 Previous Swipe: 새 메시지 감지, 아이콘 추가 시도');
+                                        addIconToMessage(node);
+                                    }, 200);
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+            
+            chatObserver.observe(chatContainer, {
+                childList: true,
+                subtree: true
+            });
+            
+            console.log('🔄 Previous Swipe: MutationObserver 설정 완료');
+        }
         
         // 백업 강제 초기화 (5초 후)
         setTimeout(() => {
@@ -499,5 +598,33 @@
         waitForSillyTavern();
     }
 
+    // 디버깅용 전역 함수 등록
+    window.PreviousSwipeDebug = {
+        addIcons: () => {
+            console.log('🔄 Previous Swipe: 수동 아이콘 추가 시작');
+            addIconsToExistingMessages();
+        },
+        checkMessages: () => {
+            console.log('🔄 Previous Swipe: 메시지 구조 확인');
+            const chat = document.querySelector('#chat');
+            console.log('Chat container:', chat);
+            if (chat) {
+                console.log('Chat children:', chat.children);
+                Array.from(chat.children).forEach((child, index) => {
+                    console.log(`Child ${index}:`, child, 'Classes:', child.className, 'ID:', child.id);
+                });
+            }
+        },
+        reinitialize: () => {
+            console.log('🔄 Previous Swipe: 재초기화 시작');
+            isInitialized = false;
+            initialize();
+        }
+    };
+
     console.log('🔄 Previous Swipe: 스크립트 로드 완료');
+    console.log('🔄 Previous Swipe: 디버깅용 명령어:');
+    console.log('- PreviousSwipeDebug.addIcons() : 수동으로 아이콘 추가');
+    console.log('- PreviousSwipeDebug.checkMessages() : 메시지 구조 확인'); 
+    console.log('- PreviousSwipeDebug.reinitialize() : 확장 재초기화');
 })(); 
